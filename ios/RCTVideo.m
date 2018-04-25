@@ -43,6 +43,8 @@ static NSString *const timedMetadata = @"timedMetadata";
   BOOL _playbackStalled;
   BOOL _playInBackground;
   BOOL _playWhenInactive;
+  BOOL _isBackgrounded;
+  BOOL _isResignedActive;
   NSString * _ignoreSilentSwitch;
   NSString * _resizeMode;
   BOOL _fullscreenPlayerPresented;
@@ -67,6 +69,8 @@ static NSString *const timedMetadata = @"timedMetadata";
     _playerBufferEmpty = YES;
     _playInBackground = false;
     _playWhenInactive = false;
+    _isBackgrounded = NO;
+    _isResignedActive = NO;
     _ignoreSilentSwitch = @"inherit"; // inherit, ignore, obey
 
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -82,6 +86,10 @@ static NSString *const timedMetadata = @"timedMetadata";
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(applicationWillEnterForeground:)
                                                  name:UIApplicationWillEnterForegroundNotification
+                                               object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(applicationDidBecomeActive:)
+                                                 name:UIApplicationDidBecomeActiveNotification
                                                object:nil];
   }
 
@@ -149,6 +157,7 @@ static NSString *const timedMetadata = @"timedMetadata";
 
 - (void)applicationWillResignActive:(NSNotification *)notification
 {
+  _isResignedActive = YES;
   if (_playInBackground || _playWhenInactive || _paused) return;
 
   [_player pause];
@@ -157,10 +166,22 @@ static NSString *const timedMetadata = @"timedMetadata";
 
 - (void)applicationDidEnterBackground:(NSNotification *)notification
 {
+  _isBackgrounded = YES;
   if (_playInBackground) {
     // Needed to play sound in background. See https://developer.apple.com/library/ios/qa/qa1668/_index.html
     [_playerLayer setPlayer:nil];
   }
+}
+
+- (void)applicationDidBecomeActive:(NSNotification *)notification
+{
+  if (_isResignedActive && !_isBackgrounded) {
+    if (_player) {
+      [self setSeek:CMTimeGetSeconds(_player.currentTime) + 0.5];
+    }
+  }
+  _isResignedActive = NO;
+  _isBackgrounded = NO;
 }
 
 - (void)applicationWillEnterForeground:(NSNotification *)notification
