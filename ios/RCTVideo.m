@@ -49,6 +49,7 @@ static NSString *const timedMetadata = @"timedMetadata";
   NSString * _resizeMode;
   BOOL _fullscreenPlayerPresented;
   UIViewController * _presentingViewController;
+  NSTimer *_resumeFromHeadphonesTimer;
 }
 
 - (instancetype)initWithEventDispatcher:(RCTEventDispatcher *)eventDispatcher
@@ -150,6 +151,8 @@ static NSString *const timedMetadata = @"timedMetadata";
 
 - (void)dealloc
 {
+  [_resumeFromHeadphonesTimer invalidate];
+  _resumeFromHeadphonesTimer = nil;
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [self removePlayerItemObservers];
   [self removePlayerLayer];
@@ -201,8 +204,12 @@ static NSString *const timedMetadata = @"timedMetadata";
   NSInteger routeChangeReason = [[interuptionDict valueForKey:AVAudioSessionRouteChangeReasonKey] integerValue];
   switch (routeChangeReason) {
     case AVAudioSessionRouteChangeReasonOldDeviceUnavailable:
-      [_player play];
+    {
+      _resumeFromHeadphonesTimer = [NSTimer scheduledTimerWithTimeInterval:0.5 repeats:NO block:^(NSTimer * _Nonnull timer) {
+        [_player play];
+      }];
       break;
+    }
     default:
       break;
   }
