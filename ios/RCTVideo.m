@@ -91,6 +91,9 @@ static NSString *const timedMetadata = @"timedMetadata";
                                              selector:@selector(applicationDidBecomeActive:)
                                                  name:UIApplicationDidBecomeActiveNotification
                                                object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(headphonesChanged:)
+                                                 name:AVAudioSessionRouteChangeNotification object:nil];
   }
 
   return self;
@@ -189,6 +192,19 @@ static NSString *const timedMetadata = @"timedMetadata";
   [self applyModifiers];
   if (_playInBackground) {
     [_playerLayer setPlayer:_player];
+  }
+}
+
+- (void)headphonesChanged:(NSNotification *)notification
+{
+  NSDictionary *interuptionDict = notification.userInfo;
+  NSInteger routeChangeReason = [[interuptionDict valueForKey:AVAudioSessionRouteChangeReasonKey] integerValue];
+  switch (routeChangeReason) {
+    case AVAudioSessionRouteChangeReasonOldDeviceUnavailable:
+      [_player play];
+      break;
+    default:
+      break;
   }
 }
 
