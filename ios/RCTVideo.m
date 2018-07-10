@@ -199,7 +199,7 @@ static NSString *const timedMetadata = @"timedMetadata";
 {
   if (_isResignedActive && !_isBackgrounded) {
     if (_player) {
-      [self setSeek:CMTimeGetSeconds(_player.currentTime) + 0.5];
+      [self setCurrentTime:CMTimeGetSeconds(_player.currentTime) + 0.5];
     }
   }
   _isResignedActive = NO;
